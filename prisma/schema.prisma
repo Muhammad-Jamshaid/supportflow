@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum TicketStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A Company represents a single tenant in the multi-tenant system.
+/// All other data is scoped to a Company via companyId.
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+
+  // Relations
+  users        User[]
+  tickets      Ticket[]
+  replies      Reply[]
+  attachments  Attachment[]
+  activityLogs ActivityLog[]
+
+  @@map("companies")
+}
+
+/// A User belongs to exactly one Company and has a role within that company.
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String?  // null for OAuth-only users
+  role         Role     @default(CUSTOMER)
+  companyId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  company              Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  submittedTickets     Ticket[]      @relation("TicketCustomer")
+  assignedTickets      Ticket[]      @relation("TicketAgent")
+  replies              Reply[]
+  activityLogs         ActivityLog[]
+
+  @@index([companyId])
+  @@index([email])
+  @@map("users")
+}
+
+/// A Ticket is a support request created by a CUSTOMER and optionally assigned to an AGENT.
+model Ticket {
+  id              String         @id @default(cuid())
+  subject         String
+  description     String
+  status          TicketStatus   @default(OPEN)
+  priority        TicketPriority @default(NORMAL)
+  companyId       String
+  customerId      String
+  assignedAgentId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer      User         @relation("TicketCustomer", fields: [customerId], references: [id])
+  assignedAgent User?        @relation("TicketAgent", fields: [assignedAgentId], references: [id])
+  replies       Reply[]
+  attachments   Attachment[]
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([assignedAgentId])
+  @@index([status])
+  @@map("tickets")
+}
+
+/// A Reply is a message posted on a Ticket by any user (customer or agent).
+model Reply {
+  id        String   @id @default(cuid())
+  message   String
+  ticketId  String
+  userId    String
+  companyId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  ticket  Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([companyId])
+  @@map("replies")
+}
+
+/// An Attachment is a file uploaded in relation to a Ticket.
+model Attachment {
+  id         String   @id @default(cuid())
+  fileUrl    String
+  fileName   String
+  ticketId   String
+  companyId  String
+  uploadedAt DateTime @default(now())
+
+  // Relations
+  ticket  Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([companyId])
+  @@map("attachments")
+}
+
+/// ActivityLog tracks audit events scoped to a company (e.g., ticket created, user assigned).
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String   // e.g. "ticket.created", "ticket.assigned", "reply.added"
+  targetId  String?  // ID of the resource this action targets (e.g. ticket ID)
+  companyId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("activity_logs")
+}
