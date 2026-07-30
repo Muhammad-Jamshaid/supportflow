@@ -111,8 +111,6 @@ model Ticket {
   replies       Reply[]
   attachments   Attachment[]
 
-  trackingToken   String         @unique @default(dbgenerated("gen_random_uuid()"))
-
   @@index([companyId])
   @@index([customerId])
   @@index([assignedAgentId])

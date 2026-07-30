@@ -1,23 +1,44 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-ibm-plex-mono",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "SupportFlow — Multi-Tenant Support Ticket System",
-  description: "A multi-tenant SaaS support ticket system built with Next.js 14, Prisma, and NextAuth.",
+  title: "SupportFlow — AI-powered Support Desk",
+  description:
+    "SupportFlow reads every ticket, summarises it, sets the priority, and drafts a reply — so your team resolves issues instead of sorting them.",
 };
+
+// Inline script to apply the saved theme before first paint (avoids flash)
+const themeScript = `
+(function(){
+  try{
+    var m=localStorage.getItem('sf-theme');
+    if(m==='dark') document.documentElement.setAttribute('data-mode','dark');
+  }catch(e){}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -26,8 +47,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable}`}
       >
         <Providers>{children}</Providers>
       </body>

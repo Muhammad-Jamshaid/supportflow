@@ -1,5 +1,4 @@
-import type { NextRequest } from "next/server";
-import type { AuthOptions, Session } from "next-auth";
+import type { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
@@ -59,6 +58,7 @@ export const authOptions: AuthOptions = {
           name: user.name,
           role: user.role,
           companyId: user.companyId,
+          isPlatformOwner: user.isPlatformOwner,
         };
       },
     }),
@@ -70,8 +70,16 @@ export const authOptions: AuthOptions = {
       // On initial sign-in, `user` is populated
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.companyId = (user as any).companyId;
+        token.role = (user as { role?: string }).role ?? "CUSTOMER";
+        token.companyId = (user as { companyId?: string }).companyId ?? "";
+        token.isPlatformOwner = (user as { isPlatformOwner?: boolean }).isPlatformOwner ?? false;
+        // DEBUG: remove after confirming isPlatformOwner flows correctly
+        console.log("[AUTH JWT] user object at sign-in:", {
+          id: user.id,
+          email: (user as { email?: string }).email,
+          isPlatformOwner: (user as { isPlatformOwner?: boolean }).isPlatformOwner,
+          tokenIsPlatformOwner: token.isPlatformOwner,
+        });
       }
 
       // Google OAuth: first sign-in — look up or create the user in DB
@@ -83,6 +91,7 @@ export const authOptions: AuthOptions = {
         token.id = dbUser.id;
         token.role = dbUser.role;
         token.companyId = dbUser.companyId;
+        token.isPlatformOwner = dbUser.isPlatformOwner;
       }
 
       return token;
@@ -94,6 +103,7 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.companyId = token.companyId as string;
+        session.user.isPlatformOwner = (token.isPlatformOwner as boolean) ?? false;
       }
       return session;
     },
@@ -111,10 +121,24 @@ async function upsertGoogleUser(email: string, name?: string) {
   if (existing) return existing;
 
   // Auto-create a company for this new Google user
+  const companyName = name ? `${name}'s Company` : `${email.split("@")[0]}'s Company`;
+  const baseSlug = companyName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "workspace";
+
+  // Ensure uniqueness
+  let slug = baseSlug;
+  let attempt = 0;
+  while (await prisma.company.findUnique({ where: { slug } })) {
+    attempt++;
+    slug = `${baseSlug}-${attempt}`;
+  }
+
   const company = await prisma.company.create({
-    data: {
-      name: name ? `${name}'s Company` : `${email.split("@")[0]}'s Company`,
-    },
+    data: { name: companyName, slug },
   });
 
   const newUser = await prisma.user.create({
@@ -142,7 +166,7 @@ async function upsertGoogleUser(email: string, name?: string) {
 //   const tickets = await prisma.ticket.findMany({ where: { companyId: scoped.companyId } });
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getScopedUser(_req?: NextRequest): Promise<{
+export async function getScopedUser(): Promise<{
   id: string;
   companyId: string;
   role: string;
