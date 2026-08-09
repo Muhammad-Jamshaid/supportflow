@@ -13,6 +13,11 @@ import ReplyForm from "@/app/components/ReplyForm";
 import StatusDropdown from "@/app/components/StatusDropdown";
 import { archiveTicketAction } from "@/app/actions/tickets";
 
+async function handleArchive(formData: FormData) {
+  "use server";
+  await archiveTicketAction(formData);
+}
+
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return `${seconds}s ago`;
@@ -105,7 +110,7 @@ export default async function TicketDetailPage({ params }: Props) {
           )}
           {/* Archive — ADMIN / AGENT only, shown only when not already archived */}
           {!isCustomer && !ticket.archived && (
-            <form action={async (fd: FormData) => { await archiveTicketAction(fd); }}>
+            <form action={handleArchive}>
               <input type="hidden" name="ticketId" value={ticket.id} />
               <button
                 type="submit"
@@ -146,7 +151,7 @@ export default async function TicketDetailPage({ params }: Props) {
               </div>
             </div>
 
-            <div className="msg msg-customer">
+            <div className={`msg ${ticket.customerId === session.user.id ? "viewer" : ""}`}>
               <Avatar name={ticket.customer.name || "Customer"} />
               <div className="msg-body">
                 <div className="msg-info">
@@ -160,9 +165,10 @@ export default async function TicketDetailPage({ params }: Props) {
             </div>
 
             {ticket.replies.map((reply) => {
+              const isViewer = reply.userId === session.user.id;
               const isAgentOrAdmin = reply.user.role === "AGENT" || reply.user.role === "ADMIN";
               return (
-                <div key={reply.id} className={`msg ${isAgentOrAdmin ? "msg-agent" : "msg-customer"}`}>
+                <div key={reply.id} className={`msg ${isViewer ? "viewer" : ""}`}>
                   <Avatar name={reply.user.name || "User"} />
                   <div className="msg-body">
                     <div className="msg-info">
@@ -178,7 +184,37 @@ export default async function TicketDetailPage({ params }: Props) {
               );
             })}
 
-            <ReplyForm ticketId={ticket.id} />
+          {/* Compose Reply */}
+          <div style={{ padding: "16px", backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)", position: "relative", zIndex: 20 }}>
+            <ReplyForm 
+              ticketId={ticket.id} 
+              aiSuggestedReply={session.user.role !== "CUSTOMER" ? ticket.aiSuggestedReply : undefined}
+            />
+          </div>
+
+          {/* AI Triage Panel (Visible only to AGENT/ADMIN, and only if data exists) */}
+          {session.user.role !== "CUSTOMER" && (ticket.aiSummary || ticket.aiCategory) && (
+            <div style={{ padding: "16px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--brand-soft)" }}>
+              <h3 style={{ fontSize: "12px", fontWeight: 600, color: "var(--brand)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <svg style={{ width: "16px", height: "16px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                AI Triage
+              </h3>
+              
+              {ticket.aiCategory && (
+                <div style={{ marginBottom: "12px" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>Predicted Category</span>
+                  <Pill variant="brand">{ticket.aiCategory}</Pill>
+                </div>
+              )}
+              
+              {ticket.aiSummary && (
+                <div>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>Auto-Summary</span>
+                  <p style={{ fontSize: "14px", color: "var(--text)", fontStyle: "italic", margin: 0 }}>&quot;{ticket.aiSummary}&quot;</p>
+                </div>
+              )}
+            </div>
+          )}
           </div>
 
           {/* Sidebar */}
@@ -205,23 +241,7 @@ export default async function TicketDetailPage({ params }: Props) {
               )}
             </div>
 
-            {!isCustomer && (
-              <div className="tside-sec">
-                <h3>AI Insights</h3>
-                <div
-                  style={{
-                    background: "var(--brand-soft)",
-                    color: "var(--brand)",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  AI suggested response & sentiment analysis coming in Phase 2b.
-                </div>
-              </div>
-            )}
+
 
             <div className="tside-sec activity">
               <h3>Activity Log</h3>

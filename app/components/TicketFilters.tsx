@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useRef, useTransition } from "react";
+import Select from "./Select";
 
 interface Agent {
   id: string;
@@ -108,7 +109,7 @@ export default function TicketFilters({ counts, agents, userRole }: TicketFilter
         <span style={{ flex: 1 }} />
 
         {/* Priority select */}
-        <select
+        <Select
           id="priority-filter"
           className="fchip fselect"
           value={currentPriority}
@@ -118,11 +119,11 @@ export default function TicketFilters({ counts, agents, userRole }: TicketFilter
           {PRIORITIES.map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>
           ))}
-        </select>
+        </Select>
 
         {/* Assignee select — hidden for CUSTOMER (agent name enumeration risk) */}
         {!isCustomer && agents.length > 0 && (
-          <select
+          <Select
             id="assignee-filter"
             className="fchip fselect"
             value={currentAssignee}
@@ -134,7 +135,7 @@ export default function TicketFilters({ counts, agents, userRole }: TicketFilter
             {agents.map((a) => (
               <option key={a.id} value={a.id}>{a.name ?? a.id}</option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
     </>

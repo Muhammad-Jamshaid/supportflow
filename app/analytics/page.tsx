@@ -15,7 +15,7 @@ export default async function AnalyticsPage() {
 
   const companyId = session.user.companyId;
 
-  const [totalTickets, resolvedTickets, openTickets, company] =
+  const [totalTickets, resolvedTickets, openTickets, company, categoryGroups] =
     await Promise.all([
       prisma.ticket.count({ where: { companyId } }),
       prisma.ticket.count({ where: { companyId, status: "RESOLVED" } }),
@@ -24,12 +24,28 @@ export default async function AnalyticsPage() {
         where: { id: companyId },
         select: { name: true },
       }),
+      prisma.ticket.groupBy({
+        by: ['aiCategory'],
+        where: { companyId },
+        _count: { id: true },
+      }),
     ]);
 
   const resolvedPct =
     totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0;
   const openPct = totalTickets > 0 ? 100 - resolvedPct : 0;
   const hasData = totalTickets > 0;
+
+  // Calculate category percentages
+  const totalCategoryTickets = categoryGroups.reduce((acc, curr) => acc + curr._count.id, 0);
+  const categoryStats = categoryGroups.map(g => ({
+    category: g.aiCategory || 'Uncategorized',
+    count: g._count.id,
+    pct: totalCategoryTickets > 0 ? Math.round((g._count.id / totalCategoryTickets) * 100) : 0
+  })).sort((a, b) => b.count - a.count);
+
+  // Colors for donut chart
+  const COLORS = ["var(--brand)", "#a855f7", "#ec4899", "#3b82f6", "#10b981", "#64748b"];
 
   return (
     <AppShell
@@ -150,16 +166,29 @@ export default async function AnalyticsPage() {
             <div className="chart-sub">Share of total</div>
             {hasData ? (
               <div className="donut-wrap" style={{ marginTop: "14px" }}>
-                <div className="donut" />
+                {/* Visual donut representation using conic-gradient based on categories */}
+                <div 
+                  className="donut" 
+                  style={{
+                    background: categoryStats.length > 0 
+                      ? `conic-gradient(${categoryStats.reduce((acc, stat, i) => {
+                          const prevPct = i === 0 ? 0 : categoryStats.slice(0, i).reduce((sum, s) => sum + s.pct, 0);
+                          return acc + `${COLORS[i % COLORS.length]} ${prevPct}% ${prevPct + stat.pct}%, `;
+                        }, "").slice(0, -2)})`
+                      : 'var(--brand-soft-2)'
+                  }}
+                />
                 <div className="legend">
-                  <div className="legend-item">
-                    <span
-                      className="legend-dot"
-                      style={{ background: "var(--brand)" }}
-                    />
-                    General
-                    <span className="lv">100%</span>
-                  </div>
+                  {categoryStats.map((stat, i) => (
+                    <div key={stat.category} className="legend-item">
+                      <span
+                        className="legend-dot"
+                        style={{ background: COLORS[i % COLORS.length] }}
+                      />
+                      {stat.category}
+                      <span className="lv">{stat.pct}%</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
@@ -188,8 +217,7 @@ export default async function AnalyticsPage() {
         >
           <span style={{ color: "var(--brand)", fontSize: "16px" }}>✦</span>
           <span>
-            Full analytics — resolution times, agent performance, ticket trends
-            — will be available once ticket creation launches in Phase 2.
+            Advanced analytics like resolution times and agent performance will be added in a future update. AI Triage categories are live.
           </span>
         </div>
       </div>

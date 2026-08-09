@@ -30,25 +30,14 @@ export const metadata: Metadata = {
     "SupportFlow reads every ticket, summarises it, sets the priority, and drafts a reply — so your team resolves issues instead of sorting them.",
 };
 
-// Inline script to apply the saved theme before first paint (avoids flash)
-const themeScript = `
-(function(){
-  try{
-    var m=localStorage.getItem('sf-theme');
-    if(m==='dark') document.documentElement.setAttribute('data-mode','dark');
-  }catch(e){}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
         className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable}`}

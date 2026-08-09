@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
+import UserDropdown from "./UserDropdown";
 
 interface AdminSidebarProps {
   activePath: string;
@@ -36,8 +37,10 @@ export default function AdminSidebar({ activePath, adminName }: AdminSidebarProp
       </nav>
 
       <div className="agent">
-        <Avatar name={adminName} />
-        <span>Admin · {adminName ?? "Admin"}</span>
+        <UserDropdown>
+          <Avatar name={adminName} />
+          <span>Admin · {adminName ?? "Admin"}</span>
+        </UserDropdown>
       </div>
     </aside>
   );

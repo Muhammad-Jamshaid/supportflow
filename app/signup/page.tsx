@@ -45,7 +45,7 @@ export default function SignupPage() {
         setError("Account created but sign-in failed. Please log in manually.");
         router.push("/login");
       } else {
-        router.push("/dashboard");
+        router.push("/signup/plan");
       }
     } catch {
       setError("An unexpected error occurred");
@@ -54,7 +54,7 @@ export default function SignupPage() {
   }
 
   async function handleGoogleSignUp() {
-    await signIn("google", { callbackUrl: "/dashboard" });
+    await signIn("google", { callbackUrl: "/signup/plan" });
   }
 
   return (

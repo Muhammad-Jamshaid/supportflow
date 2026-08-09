@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { submitPublicReplyAction } from "@/app/actions/public";
 
 export default function PublicReplyForm({ trackingToken }: { trackingToken: string }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,38 +37,50 @@ export default function PublicReplyForm({ trackingToken }: { trackingToken: stri
     } else {
       setMessage("");
       setLoading(false);
-      // Let the page reload or mutate to see the new reply.
-      // Since it's a server component displaying the replies,
-      // window.location.reload() is the simplest way for a public form.
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
       window.location.reload();
     }
   }
 
   return (
-    <div style={{ marginTop: "32px", padding: "24px", background: "var(--surface)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+    <div style={{ marginTop: "32px", padding: "24px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--border)" }}>
       <h3 style={{ fontSize: "16px", marginBottom: "16px" }}>Add a reply</h3>
       
       {error && <div className="auth-error" style={{ marginBottom: "16px" }}>{error}</div>}
       
       <form onSubmit={handleSubmit}>
         <textarea
+          ref={textareaRef}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleInput}
           placeholder="Type your message here..."
-          rows={4}
+          rows={3}
           required
           style={{
             width: "100%",
-            padding: "12px",
-            borderRadius: "6px",
-            border: "1px solid var(--border)",
+            padding: "16px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-strong)",
             background: "var(--bg)",
             color: "var(--text)",
             fontSize: "14px",
             fontFamily: "var(--font-inter)",
-            resize: "vertical",
-            marginBottom: "12px",
+            resize: "none",
+            overflow: "hidden",
+            minHeight: "80px",
+            marginBottom: "16px",
             boxSizing: "border-box",
+            lineHeight: "1.6",
+            outline: "none",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "var(--brand)";
+            e.target.style.boxShadow = "0 0 0 2px var(--brand-soft)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "var(--border-strong)";
+            e.target.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
           }}
         />
         <div style={{ display: "flex", justifyContent: "flex-end" }}>

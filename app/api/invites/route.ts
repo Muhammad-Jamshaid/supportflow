@@ -39,6 +39,33 @@ export async function POST(req: NextRequest) {
     data: { usedAt: new Date() }, // mark old ones as "used" to invalidate
   });
 
+  const company = await prisma.company.findUnique({
+    where: { id: session.user.companyId },
+    select: { plan: true },
+  });
+
+  if (company) {
+    const planConfig = await prisma.planConfig.findUnique({
+      where: { plan: company.plan }
+    });
+
+    if (planConfig && planConfig.maxSeats !== null) {
+      const activeAgents = await prisma.user.count({
+        where: { companyId: session.user.companyId, role: { in: ["ADMIN", "AGENT"] } },
+      });
+      const pendingInvites = await prisma.inviteToken.count({
+        where: { companyId: session.user.companyId, usedAt: null, expiresAt: { gt: new Date() } },
+      });
+
+      if (activeAgents + pendingInvites >= planConfig.maxSeats) {
+        return NextResponse.json(
+          { error: `Plan limit reached: max ${planConfig.maxSeats} agents. Please upgrade to invite more.` },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   // Generate a cryptographically random, URL-safe token
   const token = randomBytes(32).toString("hex"); // 64 char hex string
   const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours

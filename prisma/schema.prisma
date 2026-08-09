@@ -9,6 +9,7 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ENUMS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,7 +23,15 @@ enum Role {
 enum Plan {
   FREE
   PRO
-  ENTERPRISE
+  TEAM
+}
+
+model PlanConfig {
+  plan       Plan @id
+  maxSeats   Int? // null = unlimited
+  maxTickets Int? // null = unlimited
+  
+  @@map("plan_configs")
 }
 
 enum TicketStatus {
@@ -52,6 +61,12 @@ model Company {
   plan      Plan     @default(FREE)
   createdAt DateTime @default(now())
 
+  // Stripe Billing Fields
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+
   // Relations
   users        User[]
   tickets      Ticket[]
@@ -68,7 +83,7 @@ model User {
   id              String   @id @default(cuid())
   name            String?
   email           String   @unique
-  passwordHash    String?  // null for OAuth-only users
+  passwordHash    String? // null for OAuth-only users
   role            Role     @default(CUSTOMER)
   companyId       String
   /// Platform-level superuser flag. Only settable via direct DB access.
@@ -78,11 +93,12 @@ model User {
   updatedAt       DateTime @updatedAt
 
   // Relations
-  company              Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  submittedTickets     Ticket[]      @relation("TicketCustomer")
-  assignedTickets      Ticket[]      @relation("TicketAgent")
-  replies              Reply[]
-  activityLogs         ActivityLog[]
+  company          Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  submittedTickets Ticket[]       @relation("TicketCustomer")
+  assignedTickets  Ticket[]       @relation("TicketAgent")
+  replies          Reply[]
+  activityLogs     ActivityLog[]
+  notifications    Notification[]
 
   @@index([companyId])
   @@index([email])
@@ -104,6 +120,11 @@ model Ticket {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
+  // AI Triage Fields
+  aiSummary        String?
+  aiCategory       String?
+  aiSuggestedReply String?
+
   // Relations
   company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   customer      User         @relation("TicketCustomer", fields: [customerId], references: [id])
@@ -111,7 +132,7 @@ model Ticket {
   replies       Reply[]
   attachments   Attachment[]
 
-  trackingToken   String         @unique @default(dbgenerated("gen_random_uuid()"))
+  trackingToken String @unique @default(dbgenerated("gen_random_uuid()"))
 
   @@index([companyId])
   @@index([customerId])
@@ -161,8 +182,8 @@ model Attachment {
 /// ActivityLog tracks audit events scoped to a company (e.g., ticket created, user assigned).
 model ActivityLog {
   id        String   @id @default(cuid())
-  action    String   // e.g. "ticket.created", "ticket.assigned", "reply.added"
-  targetId  String?  // ID of the resource this action targets (e.g. ticket ID)
+  action    String // e.g. "ticket.created", "ticket.assigned", "reply.added"
+  targetId  String? // ID of the resource this action targets (e.g. ticket ID)
   companyId String
   userId    String
   createdAt DateTime @default(now())
@@ -180,12 +201,12 @@ model ActivityLog {
 /// Expires 72 hours after creation. Marked usedAt when accepted.
 model InviteToken {
   id        String    @id @default(cuid())
-  token     String    @unique    // cryptographically random, URL-safe
-  email     String               // invitee's email address
+  token     String    @unique // cryptographically random, URL-safe
+  email     String // invitee's email address
   role      Role      @default(AGENT)
   companyId String
   expiresAt DateTime
-  usedAt    DateTime?            // null = still valid
+  usedAt    DateTime? // null = still valid
   createdAt DateTime  @default(now())
 
   // Relations
@@ -194,4 +215,20 @@ model InviteToken {
   @@index([token])
   @@index([companyId])
   @@map("invite_tokens")
+}
+
+/// In-App Notifications for users
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String? // Optional URL to redirect to when clicked
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
 }

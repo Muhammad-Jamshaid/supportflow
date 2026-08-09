@@ -53,6 +53,32 @@ export async function createReplyAction(formData: FormData): Promise<{
     },
   });
 
+  // Create Notifications
+  if (session.user.role === "CUSTOMER") {
+    // Customer replied -> Notify assigned agent (if any)
+    // In a real app we might notify all admins if unassigned, but for now we'll just notify the assigned agent
+    if (ticket.assignedAgentId) {
+      await prisma.notification.create({
+        data: {
+          userId: ticket.assignedAgentId,
+          title: "New Customer Reply",
+          message: `Ticket: ${ticket.subject}`,
+          link: `/tickets/${ticket.id}`,
+        }
+      });
+    }
+  } else {
+    // Agent/Admin replied -> Notify customer
+    await prisma.notification.create({
+      data: {
+        userId: ticket.customerId,
+        title: "New Reply from Support",
+        message: `Ticket: ${ticket.subject}`,
+        link: `/tickets/${ticket.id}`,
+      }
+    });
+  }
+
   revalidatePath(`/tickets/${ticketId}`);
   return { ok: true };
 }
@@ -141,4 +167,77 @@ export async function archiveTicketAction(formData: FormData): Promise<{
   revalidatePath("/tickets");
   revalidatePath(`/tickets/${ticketId}`);
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE TICKET (AGENT / ADMIN only)
+// Allows agents/admins to create tickets on behalf of their customers.
+// CUSTOMER role is explicitly blocked (they use the public submit portal).
+// ─────────────────────────────────────────────────────────────────────────────
+export async function createAgentTicketAction(formData: FormData): Promise<{
+  ok?: true;
+  ticketId?: string;
+  error?: string;
+}> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Unauthorized." };
+  if (session.user.role === "CUSTOMER") return { error: "Forbidden." };
+
+  const subject    = (formData.get("subject")    as string | null)?.trim();
+  const customerId = (formData.get("customerId") as string | null)?.trim();
+  const priority   = (formData.get("priority")   as string | null)?.trim();
+  const message    = (formData.get("message")    as string | null)?.trim();
+
+  if (!subject || !customerId || !priority || !message) {
+    return { error: "All fields are required." };
+  }
+
+  if (!["LOW", "NORMAL", "HIGH", "URGENT"].includes(priority)) {
+    return { error: "Invalid priority." };
+  }
+
+  // RBAC: Ensure the customer belongs to the agent's company
+  const customer = await prisma.user.findFirst({
+    where: { id: customerId, companyId: session.user.companyId, role: "CUSTOMER" },
+  });
+  if (!customer) {
+    return { error: "Invalid customer selected or customer does not belong to your company." };
+  }
+
+  const { checkTicketLimit } = await import("@/lib/billing");
+  const limitError = await checkTicketLimit(session.user.companyId);
+  if (limitError) {
+    return { error: limitError };
+  }
+
+  const ticket = await prisma.ticket.create({
+    data: {
+      subject,
+      description: message,
+      priority: priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
+      status: "OPEN",
+      companyId: session.user.companyId,
+      customerId,
+      assignedAgentId: session.user.id, // Auto-assign to the creator
+      replies: {
+        create: {
+          message,
+          userId: session.user.id,
+          companyId: session.user.companyId,
+        }
+      }
+    }
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      action: "ticket.created",
+      targetId: ticket.id,
+      companyId: session.user.companyId,
+      userId: session.user.id,
+    },
+  });
+
+  revalidatePath("/tickets");
+  return { ok: true, ticketId: ticket.id };
 }

@@ -94,6 +94,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
     ...(rawQ
       ? {
           OR: [
+            { id: { contains: rawQ.replace('#', '').toLowerCase() } },
             { subject:  { contains: rawQ, mode: "insensitive" as const } },
             { customer: { name: { contains: rawQ, mode: "insensitive" as const } } },
           ],

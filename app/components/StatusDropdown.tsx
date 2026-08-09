@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { changeStatusAction } from "@/app/actions/tickets";
+import Select from "./Select";
 
 export default function StatusDropdown({ 
   ticketId, 
@@ -25,16 +26,16 @@ export default function StatusDropdown({
   }
 
   return (
-    <select
+    <Select
       className="btn btn-ghost btn-sm"
       value={currentStatus}
       onChange={(e) => handleStatusChange(e.target.value)}
       disabled={loading}
-      style={{ appearance: "none", cursor: "pointer", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+      style={{ cursor: "pointer", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
     >
       <option value="OPEN">Open</option>
       <option value="RESOLVED">Resolved</option>
       <option value="CLOSED">Closed</option>
-    </select>
+    </Select>
   );
 }

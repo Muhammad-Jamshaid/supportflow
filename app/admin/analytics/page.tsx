@@ -1,0 +1,215 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import AppShell from "@/app/components/AppShell";
+import AdminSidebar from "@/app/components/AdminSidebar";
+import StatCard from "@/app/components/StatCard";
+import DarkModeToggle from "@/app/components/DarkModeToggle";
+
+export default async function AdminAnalyticsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+  if (!session.user.isPlatformOwner) redirect("/dashboard");
+
+  const [totalTickets, resolvedTickets, openTickets, categoryGroups] =
+    await Promise.all([
+      prisma.ticket.count(),
+      prisma.ticket.count({ where: { status: "RESOLVED" } }),
+      prisma.ticket.count({ where: { status: "OPEN" } }),
+      prisma.ticket.groupBy({
+        by: ['aiCategory'],
+        _count: { id: true },
+      }),
+    ]);
+
+  const resolvedPct =
+    totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0;
+  const openPct = totalTickets > 0 ? 100 - resolvedPct : 0;
+  const hasData = totalTickets > 0;
+
+  // Calculate category percentages
+  const totalCategoryTickets = categoryGroups.reduce((acc, curr) => acc + curr._count.id, 0);
+  const categoryStats = categoryGroups.map(g => ({
+    category: g.aiCategory || 'Uncategorized',
+    count: g._count.id,
+    pct: totalCategoryTickets > 0 ? Math.round((g._count.id / totalCategoryTickets) * 100) : 0
+  })).sort((a, b) => b.count - a.count);
+
+  // Colors for donut chart
+  const COLORS = ["var(--brand)", "#a855f7", "#ec4899", "#3b82f6", "#10b981", "#64748b"];
+
+  return (
+    <AppShell
+      sidebar={
+        <AdminSidebar
+          activePath="/admin/analytics"
+          adminName={session.user.name}
+        />
+      }
+    >
+      {/* Topbar */}
+      <div className="topbar">
+        <h2>Platform Analytics</h2>
+        <div className="topbar-right">
+          <DarkModeToggle />
+          <button className="fchip" type="button">
+            All Time ▾
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="content">
+        {/* Stat cards */}
+        <div className="stats">
+          <StatCard
+            label="Total tickets across platform"
+            value={totalTickets}
+            delta={hasData ? undefined : "No tickets yet"}
+          />
+          <StatCard
+            label="Open"
+            value={hasData ? openTickets : "—"}
+            delta={hasData ? `${openPct}% of total` : undefined}
+          />
+          <StatCard
+            label="Resolved"
+            value={hasData ? resolvedTickets : "—"}
+            delta={hasData ? `${resolvedPct}% resolution rate` : undefined}
+          />
+          <StatCard
+            label="Avg platform resolution time"
+            value="—"
+            delta="Available soon"
+          />
+        </div>
+
+        {/* Volume chart — empty state until tickets exist */}
+        <div className="chart-row">
+          <div className="chart-card">
+            <h3>Ticket volume over time</h3>
+            <div className="chart-sub">Platform-wide daily volume</div>
+            {hasData ? (
+              <>
+                <svg
+                  viewBox="0 0 400 140"
+                  width="100%"
+                  height="140"
+                  preserveAspectRatio="none"
+                >
+                  <polyline
+                    fill="none"
+                    stroke="var(--border-strong)"
+                    strokeWidth="1"
+                    points="0,20 400,20"
+                  />
+                  <polyline
+                    fill="none"
+                    stroke="var(--border-strong)"
+                    strokeWidth="1"
+                    points="0,70 400,70"
+                  />
+                  <polyline
+                    fill="none"
+                    stroke="var(--border-strong)"
+                    strokeWidth="1"
+                    points="0,120 400,120"
+                  />
+                  <polyline
+                    fill="none"
+                    stroke="var(--brand)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points="0,120 100,110 200,100 300,80 400,60"
+                  />
+                </svg>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    marginTop: "6px",
+                  }}
+                >
+                  <span>Earlier</span>
+                  <span>Recent</span>
+                </div>
+              </>
+            ) : (
+              <div className="empty-state" style={{ padding: "30px 0" }}>
+                <div className="empty-icon">▤</div>
+                <h3>No data yet</h3>
+                <p>
+                  The chart will populate once workspaces start receiving tickets.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Category breakdown */}
+          <div className="chart-card">
+            <h3>Global Tickets by category</h3>
+            <div className="chart-sub">Share of total across all workspaces</div>
+            {hasData ? (
+              <div className="donut-wrap" style={{ marginTop: "14px" }}>
+                <div 
+                  className="donut" 
+                  style={{
+                    background: categoryStats.length > 0 
+                      ? `conic-gradient(${categoryStats.reduce((acc, stat, i) => {
+                          const prevPct = i === 0 ? 0 : categoryStats.slice(0, i).reduce((sum, s) => sum + s.pct, 0);
+                          return acc + `${COLORS[i % COLORS.length]} ${prevPct}% ${prevPct + stat.pct}%, `;
+                        }, "").slice(0, -2)})`
+                      : 'var(--brand-soft-2)'
+                  }}
+                />
+                <div className="legend">
+                  {categoryStats.map((stat, i) => (
+                    <div key={stat.category} className="legend-item">
+                      <span
+                        className="legend-dot"
+                        style={{ background: COLORS[i % COLORS.length] }}
+                      />
+                      {stat.category}
+                      <span className="lv">{stat.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state" style={{ padding: "30px 0" }}>
+                <div className="empty-icon">◐</div>
+                <h3>No data yet</h3>
+                <p>Category breakdown will appear once tickets are created.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Notice */}
+        <div
+          style={{
+            background: "var(--brand-soft)",
+            border: "1px solid var(--brand-soft-2)",
+            borderRadius: "10px",
+            padding: "14px 18px",
+            fontSize: "13px",
+            color: "var(--text-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginTop: "24px"
+          }}
+        >
+          <span style={{ color: "var(--brand)", fontSize: "16px" }}>✦</span>
+          <span>
+            These analytics reflect platform-wide totals across all customer workspaces.
+          </span>
+        </div>
+      </div>
+    </AppShell>
+  );
+}

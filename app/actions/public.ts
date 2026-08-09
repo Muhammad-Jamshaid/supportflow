@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { waitUntil } from "@vercel/functions";
+import { triageTicket } from "@/lib/ai";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC TICKET SUBMISSION (no auth required)
@@ -28,8 +30,8 @@ export async function submitTicketAction(formData: FormData): Promise<{
     return { error: "Subject must be 200 characters or fewer." };
   }
 
-  const company = await prisma.company.findUnique({ where: { id: companyId } });
-  if (!company) return { error: "Workspace not found." };
+  // We don't need a separate round-trip to verify the company exists
+  // because the user lookup/creation will enforce the foreign key constraint.
 
   // Find or create CUSTOMER user for this email + company combination
   let customer = await prisma.user.findFirst({
@@ -38,42 +40,48 @@ export async function submitTicketAction(formData: FormData): Promise<{
 
   if (!customer) {
     customer = await prisma.user.create({
-      data: {
-        email,
-        name: name || null,
-        role: "CUSTOMER",
-        companyId,
-      },
+      data: { email, name: name || null, role: "CUSTOMER", companyId },
     });
   } else if (name && !customer.name) {
-    // Backfill name if we now have one
-    customer = await prisma.user.update({
-      where: { id: customer.id },
-      data: { name },
-    });
+    // Fire-and-forget name backfill to save a round trip
+    prisma.user.update({ where: { id: customer.id }, data: { name } }).catch(console.error);
   }
 
-  // Create the ticket
+  const { checkTicketLimit } = await import("@/lib/billing");
+  const limitError = await checkTicketLimit(companyId);
+  if (limitError) {
+    return { error: limitError };
+  }
+
   const ticket = await prisma.ticket.create({
     data: {
       subject,
       description,
-      status:   "OPEN",
+      status: "OPEN",
       priority: "NORMAL",
       companyId,
       customerId: customer.id,
     },
   });
 
-  // Activity log
-  await prisma.activityLog.create({
+  // Activity log in the background (fire-and-forget) to speed up response
+  prisma.activityLog.create({
     data: {
-      action:   "ticket.created",
+      action: "ticket.created",
       targetId: ticket.id,
       companyId,
-      userId:   customer.id,
+      userId: customer.id,
     },
-  });
+  }).catch(console.error);
+
+  // Trigger AI Triage in the background
+  // Vercel requires waitUntil() to keep the lambda alive after response,
+  // but locally waitUntil() holds the HTTP socket open. We split the behavior:
+  if (process.env.NODE_ENV === "development") {
+    triageTicket(ticket.id, ticket.subject, ticket.description).catch(console.error);
+  } else {
+    waitUntil(triageTicket(ticket.id, ticket.subject, ticket.description));
+  }
 
   return { ticketId: ticket.id, trackingToken: ticket.trackingToken };
 }

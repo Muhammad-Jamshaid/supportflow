@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
+import NotificationBell from "./NotificationBell";
+import UserDropdown from "./UserDropdown";
 
 interface SidebarProps {
   activePath: string;
@@ -20,7 +22,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard",  label: "Dashboard"  },
   { href: "/tickets",    label: "Tickets"    },
-  { href: "/customers",  label: "Customers",  disabled: true },    // Phase 2
+  { href: "/customers",  label: "Customers", hideForRoles: ["CUSTOMER"] },
   { href: "/analytics",  label: "Analytics",  hideForRoles: ["CUSTOMER"] },
   { href: "/settings",   label: "Settings"   },
 ];
@@ -85,10 +87,13 @@ export default function Sidebar({
       </nav>
 
       <div className="agent">
-        <Avatar name={userName} />
-        <span>
-          {userName ?? "User"} · {roleLabel}
-        </span>
+        <UserDropdown>
+          <Avatar name={userName} />
+          <span>
+            {userName ?? "User"} · {roleLabel}
+          </span>
+        </UserDropdown>
+        <NotificationBell />
       </div>
     </aside>
   );

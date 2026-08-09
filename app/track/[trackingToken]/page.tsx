@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import PublicReplyForm from "./PublicReplyForm";
+import Avatar from "@/app/components/Avatar";
 
 interface Props {
   params: { trackingToken: string };
@@ -19,6 +20,13 @@ export default async function TrackTicketPage({ params }: Props) {
       status: true,
       priority: true,
       createdAt: true,
+      customerId: true,
+      customer: {
+        select: {
+          name: true,
+          email: true,
+        }
+      },
       company: {
         select: {
           name: true,
@@ -28,6 +36,7 @@ export default async function TrackTicketPage({ params }: Props) {
         orderBy: { createdAt: "asc" },
         select: {
           id: true,
+          userId: true,
           message: true,
           createdAt: true,
           user: {
@@ -78,49 +87,44 @@ export default async function TrackTicketPage({ params }: Props) {
               Priority: {ticket.priority}
             </span>
           </div>
-
-          <div style={{ 
-            padding: "16px", 
-            background: "var(--surface)", 
-            borderRadius: "8px", 
-            border: "1px solid var(--border)",
-            whiteSpace: "pre-wrap",
-            lineHeight: 1.6
-          }}>
-            {ticket.description}
-          </div>
         </div>
 
-        {ticket.replies.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {ticket.replies.map(reply => {
-              const isCustomer = reply.user.role === "CUSTOMER";
-              return (
-                <div 
-                  key={reply.id} 
-                  style={{
-                    padding: "16px",
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    marginLeft: isCustomer ? "auto" : "0",
-                    marginRight: isCustomer ? "0" : "auto",
-                    maxWidth: "85%",
-                    position: "relative"
-                  }}
-                >
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "8px", display: "flex", justifyContent: "space-between" }}>
-                    <strong>{reply.user.name || "Customer"}</strong>
-                    <span>{new Date(reply.createdAt).toLocaleDateString()} {new Date(reply.createdAt).toLocaleTimeString()}</span>
+        {/* Thread */}
+        <div className="thread" style={{ marginTop: "24px" }}>
+          
+          <div className="msg viewer">
+            <Avatar name={ticket.customer.name || "Customer"} />
+            <div className="msg-body">
+              <div className="msg-info">
+                <strong>{ticket.customer.name || "Customer"}</strong>
+                <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="msg-content" style={{ whiteSpace: "pre-wrap" }}>
+                {ticket.description}
+              </div>
+            </div>
+          </div>
+
+          {ticket.replies.map(reply => {
+            const isViewer = reply.userId === ticket.customerId;
+            const isAgentOrAdmin = reply.user.role === "AGENT" || reply.user.role === "ADMIN";
+            return (
+              <div key={reply.id} className={`msg ${isViewer ? "viewer" : ""}`}>
+                <Avatar name={reply.user.name || "User"} />
+                <div className="msg-body">
+                  <div className="msg-info">
+                    <strong>{reply.user.name || "User"}</strong>
+                    {isAgentOrAdmin && <span className="agent-badge">Agent</span>}
+                    <span>{new Date(reply.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                  <div className="msg-content" style={{ whiteSpace: "pre-wrap" }}>
                     {reply.message}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
 
         <PublicReplyForm trackingToken={trackingToken} />
         

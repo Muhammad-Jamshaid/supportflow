@@ -1,22 +1,25 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export default function DarkModeToggle() {
-  const [dark, setDark] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  // Sync with what the theme-restore script may have already set
   useEffect(() => {
-    setDark(document.documentElement.getAttribute("data-mode") === "dark");
+    setMounted(true);
   }, []);
 
+  if (!mounted) {
+    return <button className="theme-toggle" aria-label="Toggle theme">●</button>;
+  }
+
+  // Use resolvedTheme to accurately know if it's currently dark or light
+  const isDark = resolvedTheme === "dark";
+
   function toggle() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.setAttribute("data-mode", next ? "dark" : "light");
-    try {
-      localStorage.setItem("sf-theme", next ? "dark" : "light");
-    } catch {}
+    setTheme(isDark ? "light" : "dark");
   }
 
   return (
@@ -24,10 +27,10 @@ export default function DarkModeToggle() {
       id="theme-toggle"
       className="theme-toggle"
       onClick={toggle}
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      title={dark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {dark ? "☀" : "●"}
+      {isDark ? "☀" : "●"}
     </button>
   );
 }
