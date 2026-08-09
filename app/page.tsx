@@ -1,9 +1,11 @@
 import Link from "next/link";
 import DarkModeToggle from "./components/DarkModeToggle";
+import LandingAnimations from "./components/LandingAnimations";
 
 export default function LandingPage() {
   return (
     <>
+      <LandingAnimations />
       {/* ── Nav ── */}
       <nav className="nav">
         <div className="logo">
