@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -24,8 +23,8 @@ export default function LandingAnimations() {
       });
 
       // 2. Sections fade and slide up on scroll
-      const sections = gsap.utils.toArray(".section");
-      sections.forEach((section: any) => {
+      const sections = gsap.utils.toArray(".section") as Element[];
+      sections.forEach((section) => {
         gsap.from(section, {
           y: 60,
           opacity: 0,
@@ -39,7 +38,7 @@ export default function LandingAnimations() {
       });
 
       // 3. Pricing tiers stagger in on scroll
-      const tiers = gsap.utils.toArray(".ptier");
+      const tiers = gsap.utils.toArray(".ptier") as Element[];
       if (tiers.length > 0) {
         gsap.from(tiers, {
           y: 40,
