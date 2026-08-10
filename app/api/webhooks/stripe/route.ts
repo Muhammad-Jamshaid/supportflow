@@ -55,13 +55,18 @@ export async function POST(req: Request) {
 
         console.log(`[Webhook] Updating company ${companyId} to plan ${plan}`);
 
+        const currentPeriodEnd = (sub as any).current_period_end || (sub.items?.data?.[0] as any)?.current_period_end;
+        if (!currentPeriodEnd) {
+          throw new Error(`Could not find current_period_end on subscription ${sub.id}`);
+        }
+
         await prisma.company.update({
           where: { id: companyId },
           data: {
             stripeSubscriptionId: sub.id,
             stripeCustomerId: sub.customer as string,
             stripePriceId: stripePriceId,
-            stripeCurrentPeriodEnd: new Date((sub as any).current_period_end * 1000),
+            stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
             plan: plan as any,
           },
         });
@@ -80,11 +85,16 @@ export async function POST(req: Request) {
 
         console.log(`[Webhook] Subscription updated ${stripeSubscriptionId} to plan ${plan}`);
 
+        const currentPeriodEnd = (subscription as any).current_period_end || (subscription.items?.data?.[0] as any)?.current_period_end;
+        if (!currentPeriodEnd) {
+          throw new Error(`Could not find current_period_end on subscription ${stripeSubscriptionId}`);
+        }
+
         await prisma.company.updateMany({
           where: { stripeSubscriptionId },
           data: {
             stripePriceId,
-            stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
             plan: plan as any,
           },
         });
