@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { getNotificationsAction, markNotificationsAsReadAction } from "@/app/actions/notifications";
+import { getNotificationsAction, markNotificationsAsReadAction, markNotificationAsReadAction } from "@/app/actions/notifications";
 
 type NotificationType = {
   id: string;
@@ -150,7 +150,11 @@ export default function NotificationBell() {
                     backgroundColor: n.isRead ? "transparent" : "var(--brand-soft)",
                     opacity: n.isRead ? 0.7 : 1,
                   }}
-                  onClick={() => {
+                  onClick={async () => {
+                    if (!n.isRead) {
+                      setNotifications(prev => prev.map(notif => notif.id === n.id ? { ...notif, isRead: true } : notif));
+                      await markNotificationAsReadAction(n.id);
+                    }
                     if (n.link) router.push(n.link);
                     setIsOpen(false);
                   }}

@@ -28,3 +28,18 @@ export async function markNotificationsAsReadAction() {
 
   return { ok: true };
 }
+
+export async function markNotificationAsReadAction(notificationId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Unauthorized" };
+
+  await prisma.notification.updateMany({
+    where: { 
+      id: notificationId,
+      userId: session.user.id 
+    },
+    data: { isRead: true },
+  });
+
+  return { ok: true };
+}

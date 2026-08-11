@@ -64,6 +64,16 @@ export default async function TicketDetailPage({ params }: Props) {
     include: { user: { select: { name: true } } },
   });
 
+  // Mark related notifications as read
+  await prisma.notification.updateMany({
+    where: {
+      userId: session.user.id,
+      link: `/tickets/${ticket.id}`,
+      isRead: false,
+    },
+    data: { isRead: true },
+  });
+
   const company = await prisma.company.findUnique({
     where: { id: session.user.companyId },
     select: { name: true, plan: true },
@@ -165,7 +175,9 @@ export default async function TicketDetailPage({ params }: Props) {
             </div>
 
             {ticket.replies.map((reply) => {
-              const isViewer = reply.userId === session.user.id;
+              const isViewer = session.user.role === "CUSTOMER" 
+                ? reply.userId === session.user.id 
+                : (reply.user.role === "AGENT" || reply.user.role === "ADMIN");
               const isAgentOrAdmin = reply.user.role === "AGENT" || reply.user.role === "ADMIN";
               return (
                 <div key={reply.id} className={`msg ${isViewer ? "viewer" : ""}`}>
