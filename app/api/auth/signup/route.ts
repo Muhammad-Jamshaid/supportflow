@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
     const { name, email, password, companyName } = body;
 
     // ── Validation ─────────────────────────────────────────────────────────
-    if (!email || !password) {
+    if (!email || !password || !companyName) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Name, email, password, and company name are required" },
         { status: 400 }
       );
     }

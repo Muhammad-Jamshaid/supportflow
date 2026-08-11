@@ -59,6 +59,7 @@ model Company {
   /// URL-safe slug for the public ticket submission link, e.g. "techcognify"
   slug      String   @unique
   plan      Plan     @default(FREE)
+  needsOnboarding Boolean @default(false)
   createdAt DateTime @default(now())
 
   // Stripe Billing Fields

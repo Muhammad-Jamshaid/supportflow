@@ -138,7 +138,7 @@ async function upsertGoogleUser(email: string, name?: string) {
   }
 
   const company = await prisma.company.create({
-    data: { name: companyName, slug },
+    data: { name: companyName, slug, needsOnboarding: true },
   });
 
   const newUser = await prisma.user.create({

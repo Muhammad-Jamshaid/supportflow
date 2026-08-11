@@ -19,4 +19,17 @@ export async function updateProfileName(formData: FormData) {
 
   revalidatePath("/settings");
 }
+export async function updateWorkspaceName(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") throw new Error("Unauthorized");
 
+  const companyName = formData.get("companyName")?.toString().trim();
+  if (!companyName) throw new Error("Workspace name is required");
+
+  await prisma.company.update({
+    where: { id: session.user.companyId },
+    data: { name: companyName },
+  });
+
+  revalidatePath("/", "layout");
+}

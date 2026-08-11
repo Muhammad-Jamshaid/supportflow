@@ -54,7 +54,7 @@ export default function SignupPage() {
   }
 
   async function handleGoogleSignUp() {
-    await signIn("google", { callbackUrl: "/signup/plan" });
+    await signIn("google", { callbackUrl: "/signup/setup" });
   }
 
   return (
@@ -87,6 +87,7 @@ export default function SignupPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              required
               autoComplete="name"
               placeholder="Sana Khan"
             />
@@ -98,6 +99,7 @@ export default function SignupPage() {
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
+              required
               placeholder="Acme Inc."
             />
           </div>

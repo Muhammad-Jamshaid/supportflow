@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Panel from "@/app/components/Panel";
 import Avatar from "@/app/components/Avatar";
 import CopyButton from "@/app/components/CopyButton";
-import { updateProfileName } from "@/app/actions/settings";
+import { updateProfileName, updateWorkspaceName } from "@/app/actions/settings";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -93,10 +93,28 @@ export default async function SettingsPage() {
 
       <Panel title="Workspace">
         <div style={{ padding: "0 18px" }}>
-          <div className="kv">
-            <span className="k">Workspace name</span>
-            <span>{company?.name ?? "—"}</span>
-          </div>
+          {session.user.role === "ADMIN" ? (
+            <form action={updateWorkspaceName} className="kv" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <span className="k" style={{ minWidth: "140px" }}>Workspace name</span>
+              <div style={{ display: "flex", flex: 1, gap: "12px" }}>
+                <input
+                  type="text"
+                  name="companyName"
+                  defaultValue={company?.name || ""}
+                  placeholder="Acme Inc."
+                  className="input"
+                  style={{ flex: 1, margin: 0 }}
+                  required
+                />
+                <button type="submit" className="btn btn-primary">Save</button>
+              </div>
+            </form>
+          ) : (
+            <div className="kv">
+              <span className="k">Workspace name</span>
+              <span>{company?.name ?? "—"}</span>
+            </div>
+          )}
           <div className="kv">
             <span className="k">Plan</span>
             <span>{planLabel}</span>
