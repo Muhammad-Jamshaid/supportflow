@@ -64,6 +64,25 @@ export async function submitTicketAction(formData: FormData): Promise<{
     },
   });
 
+  // Notify admins and agents
+  const agents = await prisma.user.findMany({
+    where: {
+      companyId,
+      role: { in: ["ADMIN", "AGENT"] },
+    }
+  });
+
+  if (agents.length > 0) {
+    await prisma.notification.createMany({
+      data: agents.map(agent => ({
+        userId: agent.id,
+        title: "New Support Ticket",
+        message: `Ticket: ${subject}`,
+        link: `/tickets/${ticket.id}`,
+      })),
+    });
+  }
+
   // Activity log in the background (fire-and-forget) to speed up response
   prisma.activityLog.create({
     data: {
@@ -129,6 +148,32 @@ export async function submitPublicReplyAction(formData: FormData): Promise<{
       userId:   ticket.customerId,
     },
   });
+
+  // Notifications
+  let notificationRecipients: string[] = [];
+  
+  if (ticket.assignedAgentId) {
+    notificationRecipients = [ticket.assignedAgentId];
+  } else {
+    const agents = await prisma.user.findMany({
+      where: {
+        companyId: ticket.companyId,
+        role: { in: ["ADMIN", "AGENT"] },
+      }
+    });
+    notificationRecipients = agents.map(a => a.id);
+  }
+
+  if (notificationRecipients.length > 0) {
+    await prisma.notification.createMany({
+      data: notificationRecipients.map(id => ({
+        userId: id,
+        title: "New Customer Reply",
+        message: `Ticket: ${ticket.subject}`,
+        link: `/tickets/${ticket.id}`,
+      })),
+    });
+  }
 
   return { success: true };
 }

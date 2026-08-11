@@ -47,9 +47,6 @@ export default function LandingPage() {
             <Link href="/signup" className="btn btn-primary">
               Start free
             </Link>
-            <a href="#how-it-works" className="btn btn-ghost">
-              Watch it triage a ticket
-            </a>
           </div>
           <div className="hero-meta">
             <div>

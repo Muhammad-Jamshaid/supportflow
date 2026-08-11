@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { getNotificationsAction, markNotificationsAsReadAction } from "@/app/actions/notifications";
 
@@ -99,7 +100,7 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {isOpen && (
+      {isOpen && typeof document !== "undefined" && createPortal(
         <div 
           ref={dropdownRef}
           style={{
@@ -172,7 +173,8 @@ export default function NotificationBell() {
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
