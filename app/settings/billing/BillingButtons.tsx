@@ -18,9 +18,10 @@ export function UpgradeButton({ priceId, planName }: { priceId: string, planName
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to initiate upgrade");
+      const msg = error instanceof Error ? error.message : "Failed to initiate upgrade";
+      toast.error(msg);
       setLoading(false);
     }
   };
@@ -45,9 +46,10 @@ export function ManageSubscriptionButton() {
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to load billing portal");
+      const msg = error instanceof Error ? error.message : "Failed to load billing portal";
+      toast.error(msg);
       setLoading(false);
     }
   };

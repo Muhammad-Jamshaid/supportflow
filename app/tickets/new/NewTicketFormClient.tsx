@@ -31,8 +31,8 @@ export default function NewTicketFormClient({ customers }: { customers: Customer
         toast.error(res.error || "Failed to create ticket");
         setLoading(false);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create ticket");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create ticket");
       setLoading(false);
     }
   }

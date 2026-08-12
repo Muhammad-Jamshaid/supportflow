@@ -6,7 +6,6 @@ import Link from "next/link";
 import AppShell from "@/app/components/AppShell";
 import Sidebar from "@/app/components/Sidebar";
 import Panel from "@/app/components/Panel";
-import { createAgentTicketAction } from "@/app/actions/tickets";
 import DarkModeToggle from "@/app/components/DarkModeToggle";
 import NewTicketFormClient from "./NewTicketFormClient";
 
