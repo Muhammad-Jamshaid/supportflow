@@ -11,7 +11,7 @@ import Panel from "@/app/components/Panel";
 import Pill, { priorityVariant } from "@/app/components/Pill";
 import DarkModeToggle from "@/app/components/DarkModeToggle";
 import TicketFilters from "@/app/components/TicketFilters";
-
+import EmptyState from "@/app/components/EmptyState";
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
@@ -183,18 +183,16 @@ export default async function TicketsPage({ searchParams }: PageProps) {
           </div>
 
           {tickets.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">▤</div>
-              <h3>
-                {rawQ || statusFilter || priorityFilter || assigneeFilter
-                  ? "No tickets match your filters"
-                  : "No tickets yet"}
-              </h3>
-              <p>
-                {rawQ || statusFilter || priorityFilter || assigneeFilter
-                  ? "Try adjusting your search or filters."
-                  : "When customers submit support requests, they'll appear here."}
-              </p>
+            <div style={{ padding: "0 20px 20px" }}>
+              <EmptyState
+                icon={
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                }
+                title={rawQ || statusFilter || priorityFilter || assigneeFilter ? "No tickets match your filters" : "No tickets yet"}
+                description={rawQ || statusFilter || priorityFilter || assigneeFilter ? "Try adjusting your search or filters." : "When customers submit support requests, they'll appear here."}
+              />
             </div>
           ) : (
             tickets.map((ticket) => (

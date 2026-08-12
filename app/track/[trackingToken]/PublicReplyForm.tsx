@@ -2,8 +2,11 @@
 
 import { useState, useRef } from "react";
 import { submitPublicReplyAction } from "@/app/actions/public";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function PublicReplyForm({ trackingToken }: { trackingToken: string }) {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,12 +36,14 @@ export default function PublicReplyForm({ trackingToken }: { trackingToken: stri
 
     if (result?.error) {
       setError(result.error);
+      toast.error(result.error);
       setLoading(false);
     } else {
       setMessage("");
       setLoading(false);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
-      window.location.reload();
+      toast.success("Reply sent successfully");
+      router.refresh();
     }
   }
 

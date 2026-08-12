@@ -6,6 +6,7 @@ import AppShell from "@/app/components/AppShell";
 import Sidebar from "@/app/components/Sidebar";
 import StatCard from "@/app/components/StatCard";
 import DarkModeToggle from "@/app/components/DarkModeToggle";
+import EmptyState from "@/app/components/EmptyState";
 
 export default async function AnalyticsPage() {
   const session = await getServerSession(authOptions);
@@ -149,13 +150,17 @@ export default async function AnalyticsPage() {
                 </div>
               </>
             ) : (
-              <div className="empty-state" style={{ padding: "30px 0" }}>
-                <div className="empty-icon">▤</div>
-                <h3>No data yet</h3>
-                <p>
-                  The chart will populate once tickets start coming in. Create
-                  tickets in Phase 2 to see volume trends here.
-                </p>
+              <div style={{ padding: "20px 0" }}>
+                <EmptyState
+                  compact
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                  }
+                  title="No data yet"
+                  description="The chart will populate once tickets start coming in."
+                />
               </div>
             )}
           </div>
@@ -192,10 +197,18 @@ export default async function AnalyticsPage() {
                 </div>
               </div>
             ) : (
-              <div className="empty-state" style={{ padding: "30px 0" }}>
-                <div className="empty-icon">◐</div>
-                <h3>No data yet</h3>
-                <p>Category breakdown will appear once tickets are created.</p>
+              <div style={{ padding: "20px 0" }}>
+                <EmptyState
+                  compact
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                  }
+                  title="No data yet"
+                  description="Category breakdown will appear once tickets are created."
+                />
               </div>
             )}
           </div>

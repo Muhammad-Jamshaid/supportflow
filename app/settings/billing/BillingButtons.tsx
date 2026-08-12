@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function UpgradeButton({ priceId, planName }: { priceId: string, planName: string }) {
   const [loading, setLoading] = useState(false);
@@ -17,8 +18,9 @@ export function UpgradeButton({ priceId, planName }: { priceId: string, planName
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || "Failed to initiate upgrade");
       setLoading(false);
     }
   };
@@ -43,8 +45,9 @@ export function ManageSubscriptionButton() {
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || "Failed to load billing portal");
       setLoading(false);
     }
   };

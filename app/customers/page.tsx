@@ -9,7 +9,7 @@ import Sidebar from "@/app/components/Sidebar";
 import Panel from "@/app/components/Panel";
 import DarkModeToggle from "@/app/components/DarkModeToggle";
 import Avatar from "@/app/components/Avatar";
-
+import EmptyState from "@/app/components/EmptyState";
 export default async function CustomersPage({
   searchParams
 }: {
@@ -93,12 +93,16 @@ export default async function CustomersPage({
           </div>
 
           {customers.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">👥</div>
-              <h3>{rawQ ? "No customers found" : "No customers yet"}</h3>
-              <p className="empty-sub">
-                {rawQ ? "Try adjusting your search query." : "Customers will appear here when they sign up or are created."}
-              </p>
+            <div style={{ padding: "0 20px 20px" }}>
+              <EmptyState
+                icon={
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                }
+                title={rawQ ? "No customers found" : "No customers yet"}
+                description={rawQ ? "Try adjusting your search query." : "Customers will appear here when they sign up or are created."}
+              />
             </div>
           ) : (
             customers.map(c => (

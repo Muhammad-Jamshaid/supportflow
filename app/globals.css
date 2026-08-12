@@ -1646,3 +1646,19 @@ html[data-mode="dark"] .qcard {
     border-right: none;
   }
 }
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+
+@keyframes pulse-skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.skeleton {
+  background-color: var(--surface-2);
+  border-radius: 8px;
+  animation: pulse-skeleton 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+

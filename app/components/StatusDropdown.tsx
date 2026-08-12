@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { changeStatusAction } from "@/app/actions/tickets";
 import Select from "./Select";
+import { toast } from "sonner";
 
 export default function StatusDropdown({ 
   ticketId, 
@@ -21,7 +22,12 @@ export default function StatusDropdown({
     formData.append("ticketId", ticketId);
     formData.append("newStatus", newStatus);
 
-    await changeStatusAction(formData);
+    const result = await changeStatusAction(formData);
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(`Ticket status changed to ${newStatus.toLowerCase()}`);
+    }
     setLoading(false);
   }
 

@@ -3,6 +3,7 @@
 import { useState, FormEvent, Suspense } from "react";
 import { submitTicketAction } from "@/app/actions/public";
 import CopyButton from "@/app/components/CopyButton";
+import { toast } from "sonner";
 
 interface Props {
   companyId: string;
@@ -35,12 +36,14 @@ function SubmitForm({ companyId, companyName }: Props) {
 
     if (result.error) {
       setError(result.error);
+      toast.error(result.error);
       setLoading(false);
     } else {
       if (result.trackingToken) {
         setTrackingToken(result.trackingToken);
       }
       setSuccess(true);
+      toast.success("Ticket submitted successfully");
       setLoading(false);
     }
   }

@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import Panel from "@/app/components/Panel";
 import Avatar from "@/app/components/Avatar";
 import CopyButton from "@/app/components/CopyButton";
-import { updateProfileName, updateWorkspaceName } from "@/app/actions/settings";
+import ProfileFormClient from "./ProfileFormClient";
+import WorkspaceFormClient from "./WorkspaceFormClient";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -46,21 +47,7 @@ export default async function SettingsPage() {
             </div>
           </div>
 
-          <form action={updateProfileName} style={{ display: "flex", gap: "12px", alignItems: "flex-end", padding: 0, border: "none" }}>
-            <label className="field" style={{ flex: 1, margin: 0 }}>
-              <span className="lbl">Display Name</span>
-              <input
-                type="text"
-                name="name"
-                defaultValue={session.user.name || ""}
-                placeholder="Enter your name"
-                className="input"
-                style={{ width: "240px" }}
-                required
-              />
-            </label>
-            <button type="submit" className="btn btn-primary" style={{ height: "42px" }}>Save Changes</button>
-          </form>
+          <ProfileFormClient defaultName={session.user.name || ""} />
 
           {user?.passwordHash && (
             <div style={{ fontSize: "13px", color: "var(--text-muted)", padding: "12px", background: "var(--bg)", borderRadius: "6px", border: "1px solid var(--border)" }}>
@@ -94,21 +81,7 @@ export default async function SettingsPage() {
       <Panel title="Workspace">
         <div style={{ padding: "0 18px" }}>
           {session.user.role === "ADMIN" ? (
-            <form action={updateWorkspaceName} className="kv" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <span className="k" style={{ minWidth: "140px" }}>Workspace name</span>
-              <div style={{ display: "flex", flex: 1, gap: "12px" }}>
-                <input
-                  type="text"
-                  name="companyName"
-                  defaultValue={company?.name || ""}
-                  placeholder="Acme Inc."
-                  className="input"
-                  style={{ flex: 1, margin: 0 }}
-                  required
-                />
-                <button type="submit" className="btn btn-primary">Save</button>
-              </div>
-            </form>
+            <WorkspaceFormClient defaultName={company?.name || ""} />
           ) : (
             <div className="kv">
               <span className="k">Workspace name</span>

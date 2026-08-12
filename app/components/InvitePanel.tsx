@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { toast } from "sonner";
 
 export default function InvitePanel() {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export default function InvitePanel() {
     } else {
       setInviteUrl(data.inviteUrl);
       setEmail("");
+      toast.success("Invite link generated");
     }
     setLoading(false);
   }

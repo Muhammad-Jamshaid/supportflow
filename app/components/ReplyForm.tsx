@@ -2,6 +2,7 @@
 
 import { useState, useRef, FormEvent } from "react";
 import { createReplyAction } from "@/app/actions/tickets";
+import { toast } from "sonner";
 
 export default function ReplyForm({ ticketId, aiSuggestedReply }: { ticketId: string; aiSuggestedReply?: string | null }) {
   const [loading, setLoading] = useState(false);
@@ -33,10 +34,12 @@ export default function ReplyForm({ ticketId, aiSuggestedReply }: { ticketId: st
 
     if (result?.error) {
       setError(result.error);
+      toast.error(result.error);
     } else {
       setMessage("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       formRef.current?.reset();
+      toast.success("Reply sent successfully");
     }
     setLoading(false);
   }

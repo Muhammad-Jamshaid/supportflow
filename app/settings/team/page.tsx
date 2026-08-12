@@ -6,6 +6,7 @@ import Panel from "@/app/components/Panel";
 import Avatar from "@/app/components/Avatar";
 import InvitePanel from "@/app/components/InvitePanel";
 import { revokeInviteAction } from "@/app/actions/team"; // need to create this
+import EmptyState from "@/app/components/EmptyState";
 
 export default async function TeamSettingsPage() {
   const session = await getServerSession(authOptions);
@@ -49,7 +50,17 @@ export default async function TeamSettingsPage() {
             </div>
           ))}
           {agents.length === 0 && (
-            <div style={{ padding: "20px 0", color: "var(--text-muted)", fontSize: "14px" }}>No agents found.</div>
+            <div style={{ padding: "0 20px 20px" }}>
+              <EmptyState
+                icon={
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                }
+                title="No team members"
+                description="Invite some people to join your team."
+              />
+            </div>
           )}
         </div>
       </Panel>
