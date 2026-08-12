@@ -20,8 +20,9 @@ export async function updateProfileName(formData: FormData) {
 
     revalidatePath("/settings");
     return { ok: true };
-  } catch (err: any) {
-    return { ok: false, error: err.message || "Failed to update profile" };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update profile";
+    return { ok: false, error: msg };
   }
 }
 
@@ -40,7 +41,8 @@ export async function updateWorkspaceName(formData: FormData) {
 
     revalidatePath("/", "layout");
     return { ok: true };
-  } catch (err: any) {
-    return { ok: false, error: err.message || "Failed to update workspace" };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update workspace";
+    return { ok: false, error: msg };
   }
 }

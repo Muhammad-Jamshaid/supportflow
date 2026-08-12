@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
@@ -18,9 +17,10 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!.trim()
     );
-  } catch (error: any) {
-    console.error(`[Webhook] Signature verification failed:`, error.message);
-    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Webhook signature error";
+    console.error(`[Webhook] Signature verification failed:`, error);
+    return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
   }
 
   console.log(`[Webhook] Processing event: ${event.type}`);
@@ -55,7 +55,8 @@ export async function POST(req: Request) {
 
         console.log(`[Webhook] Updating company ${companyId} to plan ${plan}`);
 
-        const currentPeriodEnd = (sub as any).current_period_end || (sub.items?.data?.[0] as any)?.current_period_end;
+        const currentPeriodEnd = (sub as Stripe.Subscription & { current_period_end?: number }).current_period_end
+          ?? (sub.items?.data?.[0] as (Stripe.SubscriptionItem & { current_period_end?: number }))?.current_period_end;
         if (!currentPeriodEnd) {
           throw new Error(`Could not find current_period_end on subscription ${sub.id}`);
         }
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
             stripeCustomerId: sub.customer as string,
             stripePriceId: stripePriceId,
             stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
-            plan: plan as any,
+            plan: plan,
           },
         });
         
@@ -85,7 +86,8 @@ export async function POST(req: Request) {
 
         console.log(`[Webhook] Subscription updated ${stripeSubscriptionId} to plan ${plan}`);
 
-        const currentPeriodEnd = (subscription as any).current_period_end || (subscription.items?.data?.[0] as any)?.current_period_end;
+        const currentPeriodEnd = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end
+          ?? (subscription.items?.data?.[0] as (Stripe.SubscriptionItem & { current_period_end?: number }))?.current_period_end;
         if (!currentPeriodEnd) {
           throw new Error(`Could not find current_period_end on subscription ${stripeSubscriptionId}`);
         }
@@ -95,7 +97,7 @@ export async function POST(req: Request) {
           data: {
             stripePriceId,
             stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
-            plan: plan as any,
+            plan: plan,
           },
         });
         
@@ -125,8 +127,9 @@ export async function POST(req: Request) {
     }
 
     return new NextResponse("Webhook processed", { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown webhook error";
     console.error("[Webhook] Processing error:", error);
-    return new NextResponse(`Error processing webhook: ${error.message}`, { status: 500 });
+    return new NextResponse(`Error processing webhook: ${message}`, { status: 500 });
   }
 }
