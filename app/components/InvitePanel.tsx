@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 export default function InvitePanel() {
   const [email, setEmail] = useState("");

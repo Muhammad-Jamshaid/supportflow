@@ -3,7 +3,7 @@
 import { useState, FormEvent, Suspense } from "react";
 import { submitTicketAction } from "@/app/actions/public";
 import CopyButton from "@/app/components/CopyButton";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 interface Props {
   companyId: string;

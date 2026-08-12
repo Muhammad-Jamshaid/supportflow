@@ -66,7 +66,12 @@ export const authOptions: AuthOptions = {
 
   callbacks: {
     // ── JWT callback: embed role + companyId into the token ───────────────────
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // Handle session updates (e.g., from ProfileFormClient)
+      if (trigger === "update" && session?.name) {
+        token.name = session.name;
+      }
+
       // On initial sign-in, `user` is populated
       if (user) {
         token.id = user.id;

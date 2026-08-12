@@ -1,23 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { updateWorkspaceName } from "@/app/actions/settings";
 
 export default function WorkspaceFormClient({ defaultName }: { defaultName: string }) {
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState(defaultName);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const trimmed = companyName.trim();
+    if (!trimmed) {
+      toast.error("Workspace name cannot be empty");
+      return;
+    }
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData();
+    formData.set("companyName", trimmed);
     const res = await updateWorkspaceName(formData);
 
     if (res?.error) {
       toast.error(res.error);
     } else {
-      toast.success("Workspace name updated");
+      toast.success("Workspace name updated!");
     }
     setLoading(false);
   }
@@ -29,7 +36,8 @@ export default function WorkspaceFormClient({ defaultName }: { defaultName: stri
         <input
           type="text"
           name="companyName"
-          defaultValue={defaultName}
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
           placeholder="Acme Inc."
           className="input"
           style={{ flex: 1, margin: 0 }}

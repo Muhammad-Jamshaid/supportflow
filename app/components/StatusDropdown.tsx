@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { changeStatusAction } from "@/app/actions/tickets";
 import Select from "./Select";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 export default function StatusDropdown({ 
   ticketId, 

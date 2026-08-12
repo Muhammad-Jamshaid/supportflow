@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { submitPublicReplyAction } from "@/app/actions/public";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 export default function PublicReplyForm({ trackingToken }: { trackingToken: string }) {
   const router = useRouter();

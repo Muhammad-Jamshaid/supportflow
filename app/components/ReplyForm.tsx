@@ -2,7 +2,7 @@
 
 import { useState, useRef, FormEvent } from "react";
 import { createReplyAction } from "@/app/actions/tickets";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 export default function ReplyForm({ ticketId, aiSuggestedReply }: { ticketId: string; aiSuggestedReply?: string | null }) {
   const [loading, setLoading] = useState(false);

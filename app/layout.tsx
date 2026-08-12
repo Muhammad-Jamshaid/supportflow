@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import { Toaster } from "react-hot-toast";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -43,6 +44,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable}`}
       >
         <Providers>{children}</Providers>
+        <Toaster position="top-center" />
       </body>
     </html>
   );
